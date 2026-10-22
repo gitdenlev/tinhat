@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d0f1a" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="application-name" content="Tinhat" />
+    <meta name="apple-mobile-web-app-title" content="Tinhat" />
+
+    <!--seo:start-->
+    <title>Tinhat — Share secrets that delete themselves</title>
+    <meta name="description" content="Send passwords, API keys and private notes through a one-time link. The secret is deleted after the first view or when the timer runs out. No accounts, no logs." />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <!--seo:end-->
+
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/tinhat.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="app"></div>
+    <noscript>
+      <main style="max-width:640px;margin:64px auto;padding:0 24px;font-family:system-ui,sans-serif;color:#e8ebf7;line-height:1.6">
+        <h1>Tinhat — Share secrets that delete themselves</h1>
+        <p>
+          Tinhat creates one-time links for passwords, API keys and private notes. Each secret is
+          deleted right after it is opened, or when its timer (5 minutes to 24 hours) expires. No accounts, no logs.
+        </p>
+        <p>JavaScript is required to create and open secrets.</p>
+        <p><a href="/privacy" style="color:#f5c842">Privacy</a> · <a href="/terms" style="color:#f5c842">Terms</a></p>
+      </main>
+    </noscript>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

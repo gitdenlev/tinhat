@@ -1,0 +1,16 @@
+{
+  "name": "Tinhat — Share secrets that delete themselves",
+  "short_name": "Tinhat",
+  "description": "One-time links for passwords, API keys and private notes. No accounts, no logs.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d0f1a",
+  "theme_color": "#0d0f1a",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/tinhat.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
+

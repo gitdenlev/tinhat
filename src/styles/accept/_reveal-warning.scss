@@ -1,0 +1,96 @@
+// ══════════════════════════════════════════════════════════════════
+// accept/_reveal-warning.scss — Reveal confirmation box & timer pill
+// ══════════════════════════════════════════════════════════════════
+@use "../variables" as *;
+@use "../mixins" as *;
+
+.accept-page {
+  @keyframes clock-tick {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(0.92);
+      opacity: 0.75;
+    }
+  }
+
+  // ── Reveal Warning Box (Confirmation before burning) ─────────────
+  .reveal-warning-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: rgba(245, 200, 66, 0.08);
+    border: 1.5px solid rgba(245, 200, 66, 0.28);
+    border-radius: $radius-md;
+    padding: 16px 18px;
+
+    .warning-icon {
+      color: $accent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .warning-text {
+      @include flex-col(6px);
+      flex: 1;
+      min-width: 0;
+
+      .warning-header-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        flex-wrap: wrap;
+
+        .warning-title {
+          font-size: 14.5px;
+          font-weight: 700;
+          color: $text-primary;
+        }
+
+        .timer-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(13, 16, 29, 0.88);
+          border: 1px solid rgba(245, 200, 66, 0.38);
+          border-radius: $radius-pill;
+          padding: 4px 10px 4px 9px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+          backdrop-filter: blur(4px);
+          user-select: none;
+          flex-shrink: 0;
+
+          .pill-clock-icon {
+            color: $accent;
+            flex-shrink: 0;
+            animation: clock-tick 3s ease-in-out infinite;
+          }
+
+          .timer-pill-text {
+            font-family: $font-sans;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: "tnum";
+            font-size: 12px;
+            font-weight: 600;
+            color: #fdf0c7;
+            letter-spacing: -0.1px;
+            white-space: nowrap;
+          }
+        }
+      }
+
+      span {
+        font-size: 13px;
+        color: #a8b1cf;
+        line-height: 1.5;
+      }
+    }
+  }
+}

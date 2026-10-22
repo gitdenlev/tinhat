@@ -1,0 +1,160 @@
+// ══════════════════════════════════════════════════════════════════
+// compose/_header.scss — Title bar & lifetime dropdown
+// ══════════════════════════════════════════════════════════════════
+@use "../variables" as *;
+@use "../mixins" as *;
+
+.compose-page .right-panel {
+  // ── Compose Header Bar ──
+  .compose-header-bar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    margin-bottom: 2px;
+    flex-wrap: wrap;
+
+    .compose-title-group {
+      @include flex-col(3px);
+
+      .compose-title {
+        font-size: 26px;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+        line-height: 1.15;
+        color: $text-primary;
+        margin: 0;
+
+        .accent {
+          color: $accent;
+        }
+      }
+
+      .compose-sub {
+        font-size: 13.5px;
+        color: $text-soft;
+        margin: 0;
+      }
+    }
+
+    .lifetime-dropdown-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+
+      .lifetime-pill-btn {
+        @include button-reset;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(13, 16, 29, 0.88);
+        border: 1px solid rgba(245, 200, 66, 0.38);
+        border-radius: $radius-pill;
+        padding: 4px 10px 4px 9px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+        backdrop-filter: blur(4px);
+        user-select: none;
+        cursor: pointer;
+        transition: border-color $transition-fast, box-shadow $transition-fast, background $transition-fast, transform 0.12s ease;
+
+        &:hover,
+        &.is-open {
+          border-color: rgba(245, 200, 66, 0.65);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 10px rgba(245, 200, 66, 0.15);
+          background: rgba(18, 22, 38, 0.95);
+        }
+
+        &:active {
+          transform: scale(0.98);
+        }
+
+        &:focus-visible {
+          outline: 2px solid $accent;
+          outline-offset: 2px;
+        }
+
+        .pill-clock-icon {
+          color: $accent;
+          flex-shrink: 0;
+          opacity: 0.95;
+        }
+
+        .pill-label {
+          font-family: $font-sans;
+          font-size: 12px;
+          font-weight: 600;
+          color: #fdf0c7;
+          letter-spacing: -0.1px;
+          white-space: nowrap;
+        }
+
+        .pill-chevron {
+          color: $text-soft;
+          flex-shrink: 0;
+          transition: transform 0.2s ease, color $transition-fast;
+
+          &.rotate {
+            transform: rotate(180deg);
+            color: $accent;
+          }
+        }
+      }
+
+      .lifetime-menu {
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        z-index: 50;
+        min-width: 155px;
+        background: #141728;
+        border: 1.5px solid #363e66;
+        border-radius: $radius-md;
+        padding: 6px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 16px rgba(0, 0, 0, 0.3);
+        animation: fade-in 0.15s ease-out;
+
+        .menu-header {
+          font-size: 10.5px;
+          font-weight: 700;
+          letter-spacing: 0.8px;
+          color: #767fa2;
+          padding: 4px 8px 6px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+          margin-bottom: 4px;
+        }
+
+        .lifetime-menu-item {
+          @include button-reset;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 7px 10px;
+          border-radius: $radius-sm;
+          font-size: 12.5px;
+          font-weight: 500;
+          color: #c4cce8;
+          cursor: pointer;
+          transition: background $transition-fast, color $transition-fast;
+
+          &:hover {
+            background: rgba(245, 200, 66, 0.12);
+            color: #ffffff;
+          }
+
+          &.selected {
+            color: $accent;
+            font-weight: 700;
+            background: rgba(245, 200, 66, 0.15);
+
+            .item-check {
+              color: $accent;
+              flex-shrink: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+}

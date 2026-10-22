@@ -1,0 +1,178 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+// ── Generic 404 Page (NotFound) ──────────────────────────────────
+.nf-page {
+  min-height: calc(100vh - 73px);
+  height: calc(100vh - 73px);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: $bg-dark;
+  color: $text-primary;
+  box-sizing: border-box;
+
+  .nf-main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .nf-container {
+    max-width: 580px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: fade-in 0.22s ease-out;
+
+    .headline {
+      font-size: clamp(24px, 4vw, 32px);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: $text-primary;
+      margin: 12px 0 10px;
+    }
+
+    .description {
+      font-size: 15px;
+      line-height: 1.6;
+      color: $text-muted;
+      max-width: 450px;
+      margin: 0 auto;
+    }
+  }
+}
+
+// ── Burned / Expired Link Page (LinkNotFound) ─────────────────────
+// Uses the standard 2-column layout (.page > .left-panel + .right-panel)
+.link-not-found-page {
+  .right-panel {
+    align-items: center;
+  }
+
+  .lnf-container {
+    width: 100%;
+    max-width: 620px;
+    box-sizing: border-box;
+    @include flex-col(24px);
+    animation: fade-in 0.2s ease-out;
+
+    // Heading
+    .card-heading {
+      .lnf-title {
+        font-size: 32px;
+        font-weight: 800;
+        color: $text-primary;
+        letter-spacing: -0.6px;
+        line-height: 1.15;
+        margin: 0;
+
+        .accent {
+          color: $accent;
+        }
+      }
+    }
+
+    // Explanatory Notice Box
+    .lnf-notice-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      background: rgba(245, 200, 66, 0.08);
+      border: 1.5px solid rgba(245, 200, 66, 0.28);
+      border-radius: $radius-md;
+      padding: 18px 20px;
+
+      .notice-icon {
+        color: $accent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .notice-text {
+        @include flex-col(8px);
+        flex: 1;
+        min-width: 0;
+
+        .notice-title {
+          font-size: 15px;
+          font-weight: 700;
+          color: $text-primary;
+          letter-spacing: -0.2px;
+        }
+
+        .notice-list {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          @include flex-col(7px);
+
+          li {
+            font-size: 13.5px;
+            color: #a8b1cf;
+            line-height: 1.5;
+
+            strong {
+              color: #f7e6a6;
+              font-weight: 600;
+            }
+          }
+        }
+      }
+    }
+
+    // Actions
+    .action-row {
+      display: flex;
+      width: 100%;
+
+      .btn-create-new {
+        @include button-primary;
+        @include flex-center;
+        gap: 9px;
+        width: 100%;
+        height: 52px;
+        padding: 0 24px;
+        font-size: 15.5px;
+        font-weight: 700;
+        border-radius: $radius-md;
+        box-sizing: border-box;
+        text-decoration: none;
+
+        .btn-action-icon {
+          flex-shrink: 0;
+        }
+      }
+    }
+
+    // Footer
+    .lnf-footer {
+      @include flex-col(10px);
+      align-items: center;
+      width: 100%;
+
+      .privacy-note {
+        text-align: center;
+        font-size: 13px;
+        color: $text-dim;
+        margin: 0;
+        line-height: 1.5;
+      }
+    }
+  }
+}
+
+@include tablet {
+  .link-not-found-page .lnf-container {
+    max-width: 100%;
+  }
+}

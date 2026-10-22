@@ -1,0 +1,59 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tinhat:latest
+    container_name: tinhat-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - ENV=production
+      - TRUST_PROXY=true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256M
+          pids: 100
+
+  # Optional Caddy Reverse Proxy with Automated TLS (Let's Encrypt / ZeroSSL)
+  # Run with: docker compose --profile proxy up -d
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: tinhat-caddy
+    restart: unless-stopped
+    profiles:
+      - proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - app
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+
+volumes:
+  caddy_data:
+  caddy_config:
+

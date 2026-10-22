@@ -1,0 +1,81 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+.docs-page {
+  font-family: $font-body;
+  background: $bg-dark-alt;
+  color: $text-light;
+  font-size: 15px;
+  line-height: 1.65;
+  min-height: calc(100vh - 73px);
+  width: 100%;
+
+  .docs-container {
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 0 24px;
+    color: $text-light;
+  }
+
+  .docs-title {
+    font-size: 32px;
+    font-weight: 800;
+    margin-bottom: 16px;
+  }
+
+  .docs-meta {
+    color: $text-muted;
+    margin-bottom: 24px;
+  }
+
+  .docs-card {
+    background: $bg-card;
+    border: 1px solid $border;
+    border-radius: 16px;
+    padding: 28px;
+    line-height: 1.7;
+
+    h3 {
+      color: $accent;
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: $text-muted-alt;
+      margin-bottom: 18px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  h1, h2, h3, h4 {
+    font-family: $font-heading;
+    line-height: 1.25;
+  }
+
+  a {
+    color: $accent;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      @include focus-ring($accent, 3px);
+      border-radius: 4px;
+    }
+  }
+
+  code {
+    font-family: $font-mono;
+    font-size: 0.88em;
+    background: $bg-code;
+    border: 1px solid $border-alt;
+    border-radius: 5px;
+    padding: 1px 6px;
+    color: $accent;
+  }
+}

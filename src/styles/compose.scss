@@ -1,0 +1,74 @@
+@use "variables" as *;
+@use "mixins" as *;
+@use "compose/header";
+@use "compose/text-field";
+@use "compose/success-card";
+@use "compose/modal";
+
+.compose-page {
+  .right-panel {
+    gap: 16px;
+
+    @media (max-height: 840px) {
+      justify-content: flex-start;
+      padding: 32px 48px;
+      gap: 12px;
+    }
+
+    // ── Error Message ──
+    .compose-error-msg {
+      font-size: 13.5px;
+      color: $danger;
+      background: rgba(224, 92, 92, 0.1);
+      border: 1px solid rgba(224, 92, 92, 0.3);
+      border-radius: $radius-sm;
+      padding: 10px 14px;
+      text-align: center;
+      width: 100%;
+      box-sizing: border-box;
+      margin: 0;
+    }
+
+    // ── Action Group ──
+    .generate-action-group {
+      display: flex;
+      align-items: center;
+      width: 100%;
+
+      .btn-generate {
+        @include button-primary;
+        @include shimmer(3.5s);
+        width: 100%;
+        height: 50px;
+        padding: 14px 24px;
+        font-size: 15.5px;
+        letter-spacing: 0.1px;
+        @include flex-center;
+        gap: 9px;
+        white-space: nowrap;
+        border-radius: $radius-md;
+        transition: background $transition-fast, transform $transition-fast;
+
+        &:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 14px rgba(245, 200, 66, 0.28);
+        }
+
+        &:active:not(:disabled) {
+          transform: translateY(0);
+        }
+      }
+    }
+
+    // ── Footnote ──
+    .privacy-note {
+      text-align: center;
+      font-size: 12.5px;
+      color: $text-dim;
+      margin: 0;
+      width: 100%;
+      max-width: 440px;
+      align-self: center;
+    }
+  }
+}

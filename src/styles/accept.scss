@@ -1,0 +1,125 @@
+@use "variables" as *;
+@use "mixins" as *;
+@use "accept/reveal-warning";
+@use "accept/secret-field";
+
+.accept-page {
+  .right-panel {
+    align-items: center;
+  }
+
+  .accept-container {
+    width: 100%;
+    max-width: 620px;
+    box-sizing: border-box;
+  }
+
+  .accept-state {
+    @include flex-col(20px);
+    animation: fade-in 0.2s ease-out;
+  }
+
+  // ── Heading ───────────────────────────────────────────────────────
+  .card-heading {
+    @include flex-col(8px);
+
+    .accept-title {
+      font-size: 28px;
+      font-weight: 800;
+      color: $text-primary;
+      letter-spacing: -0.5px;
+      line-height: 1.15;
+      margin: 0;
+
+      .accent {
+        color: $accent;
+      }
+    }
+
+    .accept-sub {
+      font-size: 14px;
+      color: $text-soft;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .shown-once-warning {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 13px;
+      border-radius: $radius-sm;
+      background: rgba(245, 200, 66, 0.1);
+      border: 1px solid rgba(245, 200, 66, 0.35);
+      margin-top: 2px;
+      align-self: flex-start;
+
+      .warning-icon {
+        color: $accent;
+        flex-shrink: 0;
+      }
+
+      .warning-text {
+        font-size: 13.5px;
+        color: #fcebbb;
+        line-height: 1.45;
+
+        .warning-strong {
+          color: $accent;
+          font-weight: 700;
+        }
+      }
+    }
+  }
+
+  .reveal-error-msg {
+    font-size: 13.5px;
+    color: $danger;
+    background: rgba(224, 92, 92, 0.1);
+    border: 1px solid rgba(224, 92, 92, 0.3);
+    border-radius: $radius-sm;
+    padding: 10px 14px;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+  }
+
+  // ── Reveal Button ─────────────────────────────────────────────────
+  .action-row {
+    display: flex;
+    width: 100%;
+
+    .btn-reveal {
+      @include button-primary;
+      @include flex-center;
+      gap: 8px;
+      width: 100%;
+      height: 50px;
+      padding: 0 20px;
+      font-size: 15.5px;
+      border-radius: $radius-md;
+      box-sizing: border-box;
+    }
+  }
+
+  // ── Privacy Note ──────────────────────────────────────────────────
+  .accept-footer {
+    @include flex-col(10px);
+    align-items: center;
+    width: 100%;
+  }
+
+  .privacy-note {
+    text-align: center;
+    font-size: 12.5px;
+    color: $text-dim;
+    margin: 0;
+  }
+}
+
+@include tablet {
+  .accept-page .accept-container {
+    max-width: 100%;
+  }
+}

@@ -1,0 +1,59 @@
+@use "variables" as *;
+@use "mixins" as *;
+
+// Full-width copy button with an animated "Copied" state (see CopyButton.svelte)
+.btn-copy {
+  @include button-primary;
+  @include flex-center;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 50px;
+  padding: 0 20px;
+  font-size: 15.5px;
+  border-radius: $radius-md;
+  box-sizing: border-box;
+  transition: background 0.25s ease, transform 0.12s ease;
+
+  &:active {
+    transform: scale(0.985);
+  }
+
+  .btn-state {
+    position: absolute;
+    inset: 0;
+    @include flex-center;
+    gap: 8px;
+    transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+
+    .btn-icon {
+      flex-shrink: 0;
+    }
+  }
+
+  .state-default {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .state-copied {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  &.is-copied {
+    background: $accent-hover;
+
+    .state-default {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+
+    .state-copied {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
