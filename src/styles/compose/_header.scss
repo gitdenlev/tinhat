@@ -156,5 +156,46 @@
         }
       }
     }
+
+    @include tablet {
+      align-items: center;
+      gap: 12px;
+
+      .compose-title-group {
+        .compose-title {
+          font-size: 23px;
+        }
+
+        .compose-sub {
+          font-size: 13px;
+        }
+      }
+
+      .lifetime-dropdown-wrap {
+        .lifetime-pill-btn {
+          padding: 6px 12px 6px 10px;
+          min-height: 34px;
+
+          .pill-label {
+            font-size: 12.5px;
+          }
+        }
+
+        .lifetime-menu {
+          min-width: 170px;
+
+          .lifetime-menu-item {
+            padding: 9px 12px;
+            font-size: 13.5px;
+          }
+        }
+      }
+    }
+
+    @include mobile {
+      .compose-title-group .compose-title {
+        font-size: 21px;
+      }
+    }
   }
 }

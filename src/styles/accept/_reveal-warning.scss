@@ -92,5 +92,14 @@
         line-height: 1.5;
       }
     }
+
+    @include mobile {
+      padding: 14px;
+      gap: 11px;
+
+      .warning-text .warning-header-row {
+        gap: 8px;
+      }
+    }
   }
 }

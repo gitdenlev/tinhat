@@ -4,13 +4,20 @@
 // ── Generic 404 Page (NotFound) ──────────────────────────────────
 .nf-page {
   min-height: calc(100vh - 73px);
+  min-height: calc(100dvh - 73px);
   height: calc(100vh - 73px);
+  height: calc(100dvh - 73px);
   width: 100%;
   display: flex;
   flex-direction: column;
   background: $bg-dark;
   color: $text-primary;
   box-sizing: border-box;
+
+  @include tablet {
+    height: auto;
+    min-height: calc(100dvh - 61px);
+  }
 
   .nf-main {
     flex: 1;
@@ -21,6 +28,14 @@
     text-align: center;
     position: relative;
     overflow: hidden;
+
+    @include tablet {
+      padding: 40px 20px;
+    }
+
+    @include mobile {
+      padding: 32px 16px;
+    }
   }
 
   .nf-container {
@@ -173,6 +188,25 @@
 
 @include tablet {
   .link-not-found-page .lnf-container {
-    max-width: 100%;
+    max-width: 560px;
+    width: 100%;
+    gap: 18px;
+
+    .card-heading .lnf-title {
+      font-size: 26px;
+    }
+  }
+}
+
+@include mobile {
+  .link-not-found-page .lnf-container {
+    .card-heading .lnf-title {
+      font-size: 23px;
+    }
+
+    .lnf-notice-box {
+      padding: 14px 16px;
+      gap: 12px;
+    }
   }
 }

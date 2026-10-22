@@ -119,7 +119,39 @@
 }
 
 @include tablet {
-  .accept-page .accept-container {
-    max-width: 100%;
+  .accept-page {
+    .accept-container {
+      max-width: 560px;
+      width: 100%;
+    }
+
+    .accept-state {
+      gap: 16px;
+    }
+
+    .card-heading {
+      .accept-title {
+        font-size: 24px;
+      }
+
+      .shown-once-warning {
+        width: 100%;
+        box-sizing: border-box;
+      }
+    }
+  }
+}
+
+@include mobile {
+  .accept-page {
+    .card-heading {
+      .accept-title {
+        font-size: 22px;
+      }
+
+      .accept-sub {
+        font-size: 13.5px;
+      }
+    }
   }
 }

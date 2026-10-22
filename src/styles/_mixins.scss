@@ -22,6 +22,12 @@
   }
 }
 
+@mixin mobile {
+  @media (max-width: $bp-mobile) {
+    @content;
+  }
+}
+
 // ── Shimmer Animation ─────────────────────────────────────────────
 @mixin shimmer($duration: 3s, $angle: 105deg, $opacity: 0.45) {
   position: relative;
@@ -54,6 +60,7 @@
   font-family: inherit;
   cursor: pointer;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @mixin button-primary {

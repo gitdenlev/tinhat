@@ -166,5 +166,29 @@
         }
       }
     }
+
+    @include tablet {
+      max-width: 100%;
+
+      .success-card-header {
+        .btn-qr-toggle {
+          width: 42px;
+          height: 42px;
+        }
+      }
+
+      .link-field-box {
+        padding: 0 14px;
+
+        .link-url-text {
+          font-size: 16px;
+        }
+      }
+
+      .qr-field-box .qr-code-frame {
+        width: 180px;
+        height: 180px;
+      }
+    }
   }
 }

@@ -65,7 +65,7 @@ We treat potential security vulnerabilities with the highest priority. If you di
 > **Please do not report security vulnerabilities via public GitHub issues, discussions, or pull requests.**
 
 ### How to Report Privately:
-1. **GitHub Security Advisory**: Open a confidential report using GitHub's **[Private Vulnerability Reporting](https://github.com)** tab on this repository.
+1. **GitHub Security Advisory**: Open a confidential report using GitHub's **[Private Vulnerability Reporting](https://github.com/gitdenlev/tinhat/security/advisories/new)** tab on this repository.
 2. **Direct Contact**: If private reporting is unavailable, reach out directly to the repository maintainers.
 
 ### What to Include:

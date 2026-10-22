@@ -42,8 +42,21 @@
   .app-container {
     width: 100%;
     min-height: calc(100vh - 73px);
+    min-height: calc(100dvh - 73px);
     display: flex;
     flex-direction: column;
     flex: 1;
+  }
+
+  @media (max-width: 1024px) {
+    .app-container {
+      min-height: calc(100dvh - 65px);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .app-container {
+      min-height: calc(100dvh - 59px);
+    }
   }
 </style>

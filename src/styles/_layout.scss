@@ -5,7 +5,9 @@
   display: flex;
   width: 100%;
   min-height: calc(100vh - 73px);
+  min-height: calc(100dvh - 73px);
   height: calc(100vh - 73px);
+  height: calc(100dvh - 73px);
   flex: 1;
 
   .left-panel {
@@ -92,6 +94,7 @@
     flex: 1 1 50%;
     width: 100%;
     min-height: calc(100vh - 73px);
+    min-height: calc(100dvh - 73px);
     height: 100%;
     background: $bg-card;
     border-left: 1px solid $border;
@@ -120,31 +123,32 @@
   .page {
     flex-direction: column;
     height: auto;
+    min-height: calc(100dvh - 65px);
 
     .left-panel {
-      padding: 40px 28px 36px;
-      flex: unset;
-
-      .hero-title {
-        font-size: 32px;
-      }
-
-      .features {
-        margin-top: 32px;
-        gap: 20px;
-      }
-
-      .deco-circle {
-        display: none;
-      }
+      display: none;
     }
 
     .right-panel {
-      padding: 36px 20px 60px;
-      flex: unset;
-      min-height: auto;
+      width: 100%;
+      flex: 1;
+      min-height: calc(100dvh - 65px);
+      height: auto;
+      padding: 36px 28px 44px;
       border-left: none;
-      border-top: 1px solid $border;
+      border-bottom: none;
+      overflow-y: visible;
+    }
+  }
+}
+
+@include mobile {
+  .page {
+    min-height: calc(100dvh - 59px);
+
+    .right-panel {
+      min-height: calc(100dvh - 59px);
+      padding: 24px 16px 32px;
     }
   }
 }
