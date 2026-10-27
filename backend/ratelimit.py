@@ -1,20 +1,18 @@
-"""Privacy-preserving, in-memory rate limiter.
-
-Clients are tracked only by one-way salted HMAC digests, so raw IPs and device
-tokens are never stored.
-"""
-
 import hashlib
 import hmac
+import ipaddress
 import secrets
 import time
 from typing import Dict, List
 
-from fastapi import Request
+from fastapi import Request, Response
 
 from .config import (
+    CLIENT_COOKIE_MAX_AGE,
+    CLIENT_COOKIE_NAME,
     CLIENT_IP_HEADER,
     DAILY_LIMIT,
+    IPV6_CLIENT_PREFIX,
     MAX_RATE_LIMIT_KEYS,
     MAX_WINDOW_SECONDS,
     RATE_LIMIT_TIERS,
@@ -32,14 +30,72 @@ def _hash_identifier(namespace: str, raw_value: str) -> str:
     return hmac.new(EPHEMERAL_RATE_SALT, msg, hashlib.sha256).hexdigest()
 
 
+def _normalize_ip(raw_ip: str) -> str:
+    value = (raw_ip or "").strip()
+    if not value:
+        return "unknown"
+
+    if value.startswith("[") and "]" in value:
+        value = value[1 : value.index("]")]
+    elif value.count(":") == 1:
+        host, _, port = value.partition(":")
+        if host and port.isdigit():
+            value = host
+
+    try:
+        address = ipaddress.ip_address(value)
+    except ValueError:
+        return value
+
+    if isinstance(address, ipaddress.IPv6Address):
+        if address.ipv4_mapped is not None:
+            return str(address.ipv4_mapped)
+        network = ipaddress.ip_network((address, IPV6_CLIENT_PREFIX), strict=False)
+        return str(network.network_address)
+
+    return str(address)
+
+
+def _valid_client_id(value: str | None) -> str | None:
+    value = (value or "").strip()
+    return value if 16 <= len(value) <= 128 else None
+
+
+def ensure_client_cookie(request: Request, response: Response) -> None:
+    """Issue an opaque HttpOnly client cookie when the request has none.
+
+    This is a quota bucket identifier, not an account or login. It is stored in
+    ``request.state`` so the very first request is counted against the new
+    bucket as well. Users can still clear cookies, in which case the IP key
+    remains as a fallback.
+    """
+    existing = _valid_client_id(request.cookies.get(CLIENT_COOKIE_NAME))
+    if existing:
+        return
+
+    token = secrets.token_urlsafe(32)
+    request.state.client_cookie_id = token
+    secure = request.url.scheme == "https"
+    if TRUST_PROXY:
+        forwarded_proto = (request.headers.get("x-forwarded-proto") or "").split(",")[0].strip().lower()
+        secure = secure or forwarded_proto == "https"
+
+    response.set_cookie(
+        CLIENT_COOKIE_NAME,
+        token,
+        max_age=CLIENT_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax",
+        secure=secure,
+        path="/",
+    )
+
+
 def get_client_keys(request: Request) -> List[str]:
-    """Return ephemeral hashed keys for both client IP and hardware/device token."""
+    """Return ephemeral hashed keys for the client IP, anonymous cookie and device token."""
     client_host = request.client.host if request.client else "unknown"
     raw_ip = client_host
 
-    # Only trust proxy headers when TRUST_PROXY is explicitly enabled.
-    # Order: operator-configured header (CLIENT_IP_HEADER) > X-Real-IP > rightmost X-Forwarded-For hop,
-    # which prevents clients from spoofing their IP via a self-supplied X-Forwarded-For.
     if TRUST_PROXY:
         configured = (request.headers.get(CLIENT_IP_HEADER) or "").strip() if CLIENT_IP_HEADER else ""
         real_ip = (request.headers.get("x-real-ip") or "").strip()
@@ -51,7 +107,13 @@ def get_client_keys(request: Request) -> List[str]:
         elif forwarded:
             raw_ip = forwarded.split(",")[-1].strip()
 
-    keys = [_hash_identifier("ip", raw_ip)]
+    keys = [_hash_identifier("ip", _normalize_ip(raw_ip))]
+
+    client_id = _valid_client_id(getattr(request.state, "client_cookie_id", None))
+    if not client_id:
+        client_id = _valid_client_id(request.cookies.get(CLIENT_COOKIE_NAME))
+    if client_id:
+        keys.append(_hash_identifier("cookie", client_id))
 
     device_token = (request.headers.get("x-device-token") or "").strip()
     if 16 <= len(device_token) <= 128:

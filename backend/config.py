@@ -42,6 +42,23 @@ MAX_ACTIVE_SECRETS = int(os.environ.get("MAX_ACTIVE_SECRETS", 2000))
 MAX_RATE_LIMIT_KEYS = int(os.environ.get("MAX_RATE_LIMIT_KEYS", 50000))
 CLEANUP_INTERVAL_SECONDS = 5.0
 
+# ── Secret storage backend ─────────────────────────────────────────────────
+# Empty REDIS_URL -> secrets live in process RAM (lost on restart / spin-down).
+# Set it (e.g. Upstash "rediss://default:<password>@<host>.upstash.io:6379") to
+# keep secrets across restarts, redeploys and free-tier sleep. Redis applies the
+# TTL itself, so no sweeper is needed for that backend.
+REDIS_URL = os.environ.get("REDIS_URL", "").strip()
+REDIS_KEY_PREFIX = os.environ.get("REDIS_KEY_PREFIX", "tinhat:secret:").strip() or "tinhat:secret:"
+
+# Reject non-E2EE (plaintext) payloads. Defaults to ON whenever an external
+# store is configured, so a third-party provider only ever sees ciphertext; the
+# decryption key stays in the URL #fragment and never reaches the server.
+REQUIRE_E2EE = os.environ.get("REQUIRE_E2EE", "true" if REDIS_URL else "false").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
 # ── Rate limiting ──────────────────────────────────────────────────────────
 # Multi-tier rate limits: (window_seconds, max_links)
 RATE_LIMIT_TIERS = (
@@ -50,6 +67,15 @@ RATE_LIMIT_TIERS = (
 )
 MAX_WINDOW_SECONDS = max(window for window, _ in RATE_LIMIT_TIERS)
 DAILY_LIMIT = max(limit for _, limit in RATE_LIMIT_TIERS)
+
+# Anonymous client cookie used as a second rate-limit key. It contains only a
+# random opaque value; clearing localStorage does not remove it. Clearing
+# cookies still falls back to the IP key.
+CLIENT_COOKIE_NAME = "tinhat_client"
+CLIENT_COOKIE_MAX_AGE = MAX_WINDOW_SECONDS
+# IPv6 subscribers usually control an entire /64, so rotate within it freely.
+# Grouping by /64 prevents trivial address rotation from resetting the quota.
+IPV6_CLIENT_PREFIX = 64
 
 # ── Networking & CORS ──────────────────────────────────────────────────────
 TRUST_PROXY = os.environ.get("TRUST_PROXY", "false").lower() in ("1", "true", "yes")

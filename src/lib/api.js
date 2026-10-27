@@ -1,12 +1,17 @@
 const API_BASE = '/api';
 
-const DAILY_SECRET_LIMIT = 20;
-const DAILY_WINDOW_MS = 24 * 60 * 60 * 1000;
-const RATE_LIMIT_TIERS_MS = [
-  { windowMs: 60 * 1000, max: 5 },           // 5 links per minute
-  { windowMs: DAILY_WINDOW_MS, max: 20 }     // 20 links per 24 hours
-];
-const QUOTA_STORAGE_KEY = 'tinhat_daily_quota_ts';
+// The server is the only source of truth for quota. This object is just a
+// placeholder shown until the first /api/quota response arrives.
+const DEFAULT_QUOTA = Object.freeze({
+  limit: 20,
+  used: 0,
+  remaining: 20,
+  reset_in_seconds: 0
+});
+
+export function getDefaultQuota() {
+  return { ...DEFAULT_QUOTA };
+}
 
 let cachedDeviceToken = null;
 
@@ -67,97 +72,37 @@ async function getDeviceToken() {
   return cachedDeviceToken;
 }
 
-function readAndPruneTimestamps(now, appendNow = false) {
-  let timestamps = [];
-  if (typeof localStorage !== 'undefined') {
-    try {
-      const raw = localStorage.getItem(QUOTA_STORAGE_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      if (Array.isArray(parsed)) {
-        timestamps = parsed.filter(
-          (ts) => typeof ts === 'number' && now - ts < DAILY_WINDOW_MS
-        );
-      }
-      if (appendNow) timestamps.push(now);
-      localStorage.setItem(QUOTA_STORAGE_KEY, JSON.stringify(timestamps));
-    } catch (_) {}
-  }
-  return timestamps;
-}
-
-function computeQuotaFromTimestamps(timestamps, now) {
-  let minRemaining = DAILY_SECRET_LIMIT;
-  let maxResetSeconds = 0;
-
-  for (const tier of RATE_LIMIT_TIERS_MS) {
-    const windowTs = timestamps.filter((ts) => now - ts < tier.windowMs);
-    const rem = Math.max(0, tier.max - windowTs.length);
-    if (rem < minRemaining) {
-      minRemaining = rem;
-    }
-    if (rem === 0 && windowTs.length > 0) {
-      const boundaryTs =
-        windowTs.length >= tier.max
-          ? windowTs[windowTs.length - tier.max]
-          : windowTs[0];
-      const resetSec = Math.max(
-        1,
-        Math.ceil((tier.windowMs - (now - boundaryTs)) / 1000)
-      );
-      if (resetSec > maxResetSeconds) {
-        maxResetSeconds = resetSec;
-      }
-    }
-  }
-
-  return {
-    limit: DAILY_SECRET_LIMIT,
-    used: timestamps.length,
-    remaining: minRemaining,
-    reset_in_seconds: maxResetSeconds
-  };
-}
-
-export function getLocalDailyQuota() {
-  const now = Date.now();
-  return computeQuotaFromTimestamps(readAndPruneTimestamps(now, false), now);
-}
-
-export function recordLocalSecretGeneration() {
-  const now = Date.now();
-  return computeQuotaFromTimestamps(readAndPruneTimestamps(now, true), now);
-}
-
-export function pickStricterQuota(serverQuota, localQuota) {
-  if (
-    typeof serverQuota?.remaining === 'number' &&
-    (serverQuota.remaining < localQuota.remaining ||
-      (serverQuota.remaining === localQuota.remaining &&
-        (serverQuota.reset_in_seconds || 0) > localQuota.reset_in_seconds))
-  ) {
-    return serverQuota;
-  }
-  return localQuota;
-}
-
+/**
+ * Fetch the authoritative quota from the server.
+ *
+ * There is deliberately no localStorage/IndexedDB fallback counter: the client
+ * cannot be trusted to enforce a limit, and persisting a counter there only
+ * creates a false sense of security (and a counter the user can simply erase).
+ * If the server is unreachable we show the default allowance; the actual
+ * POST /api/secrets call is still rejected server-side when the quota is gone.
+ */
 export async function fetchDailyQuota() {
-  const localQuota = getLocalDailyQuota();
   try {
     const deviceToken = await getDeviceToken();
     const res = await fetch(`${API_BASE}/quota`, {
+      credentials: 'same-origin',
       headers: { 'X-Device-Token': deviceToken }
     });
     if (res.ok) {
-      return pickStricterQuota(await res.json(), localQuota);
+      const data = await res.json();
+      if (typeof data?.remaining === 'number') {
+        return data;
+      }
     }
   } catch (_) {}
-  return localQuota;
+  return getDefaultQuota();
 }
 
 export async function createSecret(data) {
   const deviceToken = await getDeviceToken();
   const res = await fetch(`${API_BASE}/secrets`, {
     method: 'POST',
+    credentials: 'same-origin',
     headers: {
       'Content-Type': 'application/json',
       'X-Device-Token': deviceToken

@@ -52,16 +52,24 @@ jobs:
           python -c "
           import asyncio
           import main
-          from fastapi import HTTPException
+          from fastapi import HTTPException, Response
           from starlette.requests import Request
           from pydantic import ValidationError
+          from backend.ratelimit import _normalize_ip
           from backend.routes import api
           from backend.schemas import CreateSecretRequest
 
           async def test():
               h = await api.health_check()
               assert h['app'] == 'Tinhat'
-              
+
+              # IPv6 quota keys must be grouped by /64, and IPv4-mapped
+              # addresses must collapse to plain IPv4.
+              assert _normalize_ip('2001:db8:1::1') == _normalize_ip('2001:db8:1::ffff')
+              assert _normalize_ip('2001:db8:1::1') != _normalize_ip('2001:db8:2::1')
+              assert _normalize_ip('::ffff:192.0.2.10') == '192.0.2.10'
+              assert _normalize_ip('127.0.0.1:54321') == '127.0.0.1'
+
               # Validate 10k length limit
               try:
                   CreateSecretRequest(text='a' * 10001, lifetime=3600)
@@ -86,7 +94,7 @@ jobs:
               # Verify secret lifecycle
               scope = {'type': 'http', 'client': ('127.0.0.1', 12345), 'headers': [], 'path': '/api/secrets'}
               req = Request(scope)
-              created = await api.create_secret(CreateSecretRequest(text='secret', lifetime=300), req)
+              created = await api.create_secret(CreateSecretRequest(text='secret', lifetime=300), req, Response())
               sid = created['id']
               
               meta = await api.get_secret_metadata(sid)

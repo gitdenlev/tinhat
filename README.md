@@ -13,7 +13,7 @@ Permanently destroyed from memory after a single view.
 
 <br />
 
-[![Storage](https://img.shields.io/badge/Storage-100%25%20In--Memory-%23f5c842?style=for-the-badge&labelColor=111326)](#-security-model)
+[![Storage](https://img.shields.io/badge/Storage-Ephemeral%20(RAM%20%7C%20Redis%20TTL)-%23f5c842?style=for-the-badge&labelColor=111326)](#-security-model)
 [![Privacy](https://img.shields.io/badge/Privacy-Burn--on--Read-%23e05c5c?style=for-the-badge&labelColor=111326)](#-features)
 [![Logs](https://img.shields.io/badge/Logs-Zero%20Logs-%237cf0c0?style=for-the-badge&labelColor=111326)](#-security-model)
 [![License: MIT](https://img.shields.io/badge/License-MIT-%23f5c842?style=for-the-badge&labelColor=111326)](LICENSE)
@@ -31,9 +31,9 @@ Permanently destroyed from memory after a single view.
 ## ⚡ Features
 
 * **Instant Access** — Zero signup, zero registration, and zero accounts. Compose and share immediately.
-* **Burn on Read** — Decrypted secrets are permanently erased from memory the instant they are viewed.
+* **Burn on Read** — Secrets are permanently erased from storage the instant they are viewed.
 * **Strict Expiration (TTL)** — If unopened, secrets self-destruct automatically once their timer elapses.
-* **RAM-Only Architecture** — Nothing touches disk, databases, swap files, or persistent storage.
+* **Ephemeral Storage** — RAM-only by default; optional Redis (e.g. Upstash) with native TTL keeps links alive across restarts and free-tier sleep, storing ciphertext only.
 * **Zero-Trace Rate Limiting** — Abuse prevention via ephemeral `HMAC-SHA256` hashes. Raw IP addresses are never logged or stored.
 * **No Caching or Indexing** — Strict `no-store` headers and `noindex` directives ensure secrets never linger in caches or search engines.
 
@@ -83,9 +83,9 @@ Tinhat provides a clean, minimalistic API for automated pipelines, scripts, and 
 | :--- | :--- | :--- |
 | `POST` | `/api/secrets` | Create a new secret (`text` up to 10,000 chars, `lifetime` 300..86400) |
 | `GET` | `/api/secrets/{id}` | Inspect secret status and remaining seconds until auto-burn |
-| `POST` | `/api/secrets/{id}/accept` | **Burn & Read**: Retrieves decrypted text and immediately purges from memory |
+| `POST` | `/api/secrets/{id}/accept` | **Burn & Read**: Retrieves the stored payload and immediately purges it (`pop` / atomic `GETDEL`) |
 | `GET` | `/api/quota` | Check client rate limit status and remaining daily quota |
-| `GET` | `/api/health` | Service healthcheck and active in-memory secret count |
+| `GET` | `/api/health` | Service healthcheck (storage backend; secret count in memory mode). Never queries Redis, so it is safe as a keep-alive ping |
 
 ### Quick cURL Example
 
@@ -96,6 +96,21 @@ curl -X POST https://your-tinhat-domain/api/secrets \
   -d '{"text": "sk-live-super-secret-token", "lifetime": 3600}'
 ```
 
+> [!NOTE]
+> When `REQUIRE_E2EE` is on (the default with `REDIS_URL`), plaintext payloads are rejected with `400`; only browser-encrypted `e2ee:v1:` payloads are accepted.
+
+---
+
+## 🚀 Free Hosting: Render + Upstash
+
+Render's free tier spins the service down after ~15 minutes without traffic, which wipes in-memory secrets. Use Redis so links survive sleep, restarts and redeploys:
+
+1. **Upstash** → create a Redis database in the same region as your Render service and copy its `rediss://default:<password>@<host>.upstash.io:6379` URL. Use a dedicated database (capacity is checked with `DBSIZE`).
+2. **Render** → *Environment* → add `REDIS_URL=<that URL>` (plus `TRUST_PROXY=true`, `SITE_URL=https://<app>.onrender.com`).
+3. *(Optional)* **Keep-alive** to avoid the ~1 min cold start: on [cron-job.org](https://cron-job.org) ping `https://<app>.onrender.com/health` with schedule `*/10 6-23 * * *` and timezone `Europe/Kyiv` (DST handled automatically). The service then sleeps roughly 00:05–06:00.
+
+Budget: one free service running 24/7 needs ≤ 744 h/month (Render grants 750 h). Each secret costs ~4 Redis commands (`DBSIZE`, `SET … EX`, `GET`, `GETDEL`), far below Upstash's free 500K commands/month.
+
 ---
 
 ## 🛡️ Security Model
@@ -103,12 +118,15 @@ curl -X POST https://your-tinhat-domain/api/secrets \
 > [!IMPORTANT]
 > **Tinhat** is designed around zero persistence and minimal attack surface.
 
-1. **Volatile RAM Only**: Secrets exist solely as ephemeral in-memory objects. They never touch disks, databases, or swap space.
-2. **True Single-View Guarantee**: Reading a secret executes an immediate memory eviction (`pop`). Subsequent visits permanently return `404 Not Found`.
+1. **Ephemeral Storage**: In-memory by default (lost on restart). With `REDIS_URL`, secrets are Redis keys whose TTL equals their lifetime, and only client-encrypted `e2ee:v1` payloads are accepted (`REQUIRE_E2EE`); the key stays in the URL `#fragment`, so neither the server nor the Redis provider can read secrets.
+2. **True Single-View Guarantee**: Reading a secret executes an immediate eviction (`pop` in memory, atomic `GETDEL` in Redis). Subsequent visits permanently return `404 Not Found`.
 3. **Privacy-Preserving Rate Limits**:
    - `5 creations / minute`, `20 creations / day`.
    - Tracked via one-way salted `HMAC-SHA256` tokens with a cryptographic salt rotated on startup.
+   - Keys include the hashed client IP (IPv6 grouped by `/64`), an optional anonymous `HttpOnly` cookie, and an optional client-generated device token.
+   - Clearing `localStorage` cannot reset the limit; the cookie survives it, and the IP bucket survives cookie clearing.
    - Raw IP addresses and client identifiers are **never saved**.
+   - Counters are process-local: a restart (or a second worker/replica) starts with a fresh window. Run a single worker, or move counters to a shared store such as Redis if you need the limit to survive restarts.
 4. **Leak Prevention**:
    - Headers: `Cache-Control: no-store, no-cache, must-revalidate`
    - Search Engines: `X-Robots-Tag: noindex, nofollow, noarchive`

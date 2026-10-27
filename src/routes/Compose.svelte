@@ -5,7 +5,7 @@
   import SuccessCard from '../components/compose/SuccessCard.svelte';
   import QuotaModal from '../components/compose/QuotaModal.svelte';
   import { useQuota } from '../composables/useQuota.svelte.js';
-  import { createSecret, recordLocalSecretGeneration, pickStricterQuota } from '../lib/api.js';
+  import { createSecret } from '../lib/api.js';
   import { encryptSecretClient } from '../lib/crypto.js';
   import LoaderCircle from '@lucide/svelte/icons/loader-circle';
   import Link from '@lucide/svelte/icons/link';
@@ -51,7 +51,13 @@
     try {
       const { payload, key } = await encryptSecretClient(trimmed);
       const result = await createSecret({ text: payload, lifetime });
-      const nextQuota = pickStricterQuota(result?.quota, recordLocalSecretGeneration());
+      // The backend returns the authoritative post-creation quota. The
+      // decrement fallback is display-only and is never persisted.
+      const nextQuota = result?.quota || {
+        ...quota.value,
+        used: Math.min(quota.value.used + 1, quota.value.limit),
+        remaining: Math.max(0, quota.value.remaining - 1)
+      };
       finalizeGeneratedSecret(result.id, key, nextQuota);
     } catch (err) {
       if (err?.status === 429) {

@@ -1,44 +1,80 @@
 """JSON API routes."""
 
+import re
 import secrets
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, HTTPException, Request, Response, status
 
-from ..config import E2EE_PREFIX, MAX_ACTIVE_SECRETS, SECRET_ID_BYTES
-from ..ratelimit import get_client_keys, get_client_quota, record_usage
+from ..config import E2EE_PREFIX, MAX_ACTIVE_SECRETS, REQUIRE_E2EE, SECRET_ID_BYTES
+from ..ratelimit import (
+    ensure_client_cookie,
+    get_client_keys,
+    get_client_quota,
+    record_usage,
+)
 from ..schemas import CreateSecretRequest
-from ..store import cleanup_expired_secrets, secrets_db
+from ..store import MemoryStore, cleanup_expired_secrets, store
 
 router = APIRouter()
+
+# secrets.token_urlsafe(16) -> 22 URL-safe chars. Anything else cannot exist, so
+# reject it without a storage round-trip (saves Redis commands on junk traffic).
+_SECRET_ID_RE = re.compile(r"^[A-Za-z0-9_-]{16,64}$")
+
+
+def _not_found() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Secret not found or expired.",
+    )
 
 
 @router.get("/health", tags=["Health"])
 @router.get("/api/health", tags=["Health"])
 async def health_check():
-    """Healthcheck endpoint."""
+    """Healthcheck endpoint (also used as keep-alive ping; never queries Redis)."""
     cleanup_expired_secrets()
-    return {
+    payload = {
         "status": "ok",
         "app": "Tinhat",
         "framework": "FastAPI + Svelte 5",
-        "active_secrets": len(secrets_db),
+        "storage": store.name,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+    if isinstance(store, MemoryStore):
+        payload["active_secrets"] = store.size()
+    return payload
 
 
 @router.get("/api/quota", tags=["Secrets"])
-async def get_quota(request: Request):
+async def get_quota(request: Request, response: Response):
     """Get current secret generation quota for the client."""
+    ensure_client_cookie(request, response)
     return get_client_quota(request)
 
 
 @router.post("/api/secrets", tags=["Secrets"])
-async def create_secret(req: CreateSecretRequest, request: Request):
+async def create_secret(req: CreateSecretRequest, request: Request, response: Response):
     """Create a new ephemeral text secret (5/min, 20/day per user)."""
     now = cleanup_expired_secrets()
-    keys = get_client_keys(request)
+    ensure_client_cookie(request, response)
 
+    clean_text = req.text.strip()
+    if not clean_text:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Secret message text cannot be empty.",
+        )
+
+    is_encrypted = clean_text.startswith(E2EE_PREFIX)
+    if REQUIRE_E2EE and not is_encrypted:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This server only accepts client-side encrypted (e2ee:v1) secrets.",
+        )
+
+    keys = get_client_keys(request)
     quota = get_client_quota(request, now=now, keys=keys, prune=False)
     if quota["remaining"] <= 0:
         raise HTTPException(
@@ -49,35 +85,30 @@ async def create_secret(req: CreateSecretRequest, request: Request):
             },
         )
 
-    if len(secrets_db) >= MAX_ACTIVE_SECRETS:
-        now = cleanup_expired_secrets(force=True)
-        if len(secrets_db) >= MAX_ACTIVE_SECRETS:
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Server secret capacity reached. Please try again shortly.",
-            )
-
-    clean_text = req.text.strip()
-    if not clean_text:
+    if await store.count() >= MAX_ACTIVE_SECRETS:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Secret message text cannot be empty.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Server secret capacity reached. Please try again shortly.",
         )
 
-    is_encrypted = clean_text.startswith(E2EE_PREFIX)
     secret_id = secrets.token_urlsafe(SECRET_ID_BYTES)
     expires_at = now + req.lifetime
 
+    await store.put(
+        secret_id,
+        {
+            "id": secret_id,
+            "text": clean_text,
+            "encrypted": is_encrypted,
+            "lifetime": req.lifetime,
+            "expires_at": expires_at,
+        },
+        ttl=req.lifetime,
+    )
+
+    # Count usage only once the secret is actually stored.
     record_usage(keys, now)
     updated_quota = get_client_quota(request, now=now, keys=keys, prune=False)
-
-    secrets_db[secret_id] = {
-        "id": secret_id,
-        "text": clean_text,
-        "encrypted": is_encrypted,
-        "lifetime": req.lifetime,
-        "expires_at": expires_at,
-    }
 
     return {
         "status": "ok",
@@ -93,17 +124,12 @@ async def create_secret(req: CreateSecretRequest, request: Request):
 async def get_secret_metadata(secret_id: str):
     """Get secret preview metadata prior to decryption."""
     now = cleanup_expired_secrets()
+    if not _SECRET_ID_RE.match(secret_id):
+        raise _not_found()
 
-    secret = secrets_db.get(secret_id)
-    if secret and now >= secret["expires_at"]:
-        secrets_db.pop(secret_id, None)
-        secret = None
-
+    secret = await store.peek(secret_id)
     if not secret:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Secret not found or expired.",
-        )
+        raise _not_found()
 
     return {
         "id": secret["id"],
@@ -117,14 +143,13 @@ async def get_secret_metadata(secret_id: str):
 @router.post("/api/secrets/{secret_id}/accept", tags=["Secrets"])
 async def accept_secret(secret_id: str):
     """Decrypt & view secret once, then permanently delete it with zero trace."""
-    now = cleanup_expired_secrets()
+    cleanup_expired_secrets()
+    if not _SECRET_ID_RE.match(secret_id):
+        raise _not_found()
 
-    secret = secrets_db.pop(secret_id, None)
-    if not secret or now >= secret["expires_at"]:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Secret not found or expired.",
-        )
+    secret = await store.burn(secret_id)
+    if not secret:
+        raise _not_found()
 
     return {
         "status": "ok",

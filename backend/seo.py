@@ -28,8 +28,8 @@ ROUTES: Dict[str, Dict] = {
     "/privacy": {
         "title": "Privacy Policy — Tinhat",
         "description": (
-            "Tinhat needs no email, password or registration. Secrets live in memory "
-            "only and are purged after one view or when they expire."
+            "Tinhat needs no email, password or registration. Secrets are encrypted in "
+            "your browser and purged after one view or when they expire."
         ),
         "canonical": "/privacy",
         "index": True,

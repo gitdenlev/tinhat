@@ -1,9 +1,9 @@
-import { fetchDailyQuota, getLocalDailyQuota } from "../lib/api.js";
+import { fetchDailyQuota, getDefaultQuota } from "../lib/api.js";
 
 const POLL_INTERVAL_MS = 15000;
 
 export function useQuota() {
-  let quota = $state(getLocalDailyQuota());
+  let quota = $state(getDefaultQuota());
 
   async function refresh() {
     quota = await fetchDailyQuota();

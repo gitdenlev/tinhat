@@ -60,7 +60,7 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
-# Note: workers must be 1 because secrets_db and ephemeral rate-limiting are strictly in-memory
+# Note: keep workers at 1 — rate-limit counters (and secrets, unless REDIS_URL is set) are in-memory
 # Binds to $PORT so PaaS platforms (Render, Railway, Fly) that inject their own port just work.
 CMD ["sh", "-c", "exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1"]
 

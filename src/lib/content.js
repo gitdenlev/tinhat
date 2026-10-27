@@ -26,12 +26,12 @@ export const ACCEPT_PANEL = {
 export const LINK_NOT_FOUND_PANEL = {
   title: 'Nothing is stored.<br/>Nothing can leak.',
   subtitle:
-    'Tinhat is engineered without persistent storage. Once a secret is burned, recovery is impossible.',
+    'Secrets are encrypted in your browser and the key never reaches the server. Once a secret is burned, recovery is impossible.',
   features: [
     {
       icon: 'shield',
-      title: 'RAM-only architecture',
-      desc: 'Secrets live strictly in volatile memory and never touch a hard disk or database.'
+      title: 'Self-destructing storage',
+      desc: 'Only encrypted data is kept, and it is deleted after one view or when the timer runs out.'
     },
     {
       icon: 'ghost',
